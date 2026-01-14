@@ -1,5 +1,5 @@
 {
   "name": "linear-simple",
   "description": "Linear GraphQL API skill - Direct curl calls without MCP for better token efficiency",
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

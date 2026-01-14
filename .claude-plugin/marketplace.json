@@ -12,7 +12,7 @@
       "name": "linear-simple",
       "source": "./plugins/linear-simple",
       "description": "Linear GraphQL API skill for issue CRUD, comments, and status changes",
-      "version": "1.0.0"
+      "version": "2.0.0"
     }
   ]
 }
