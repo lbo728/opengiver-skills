@@ -1,24 +1,38 @@
 ---
 description: Update issue status (e.g., In Progress, Done)
 argument-hint: [issue-identifier] [status]
-allowed-tools: Bash(curl:*), Bash(cat:*)
+allowed-tools: Bash(curl:*), Bash(cat:*), AskUserQuestion
 ---
 
 # Update Issue Status
 
 Update status for: $ARGUMENTS
 
-## Steps
+## Step 1: Load Config (Hierarchical)
 
-1. Parse issue identifier and target status from arguments
-
-2. Read config:
 ```bash
-CONFIG=$(cat ~/.config/linear-simple/config.json)
-API_KEY=$(echo $CONFIG | grep -o '"apiKey":"[^"]*"' | cut -d'"' -f4)
+# Try project config first
+PROJECT_CONFIG=$(cat .claude/linear-simple.json 2>/dev/null)
+
+# Fallback to user config
+USER_CONFIG=$(cat ~/.config/linear-simple/config.json 2>/dev/null)
 ```
 
-3. Get issue UUID:
+If no config found, prompt: "Linear 설정이 없습니다. 지금 설정할까요?" (Yes/No)
+
+## Step 2: Parse Arguments
+
+Parse issue identifier and target status from arguments.
+- If status not provided, ask user which status to set
+
+## Step 3: Extract API Key
+
+```bash
+API_KEY=$(echo $USER_CONFIG | grep -o '"api_key":"[^"]*"' | cut -d'"' -f4)
+```
+
+## Step 4: Get Issue UUID
+
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $API_KEY" \
@@ -26,7 +40,8 @@ curl -s -X POST https://api.linear.app/graphql \
   -d '{"query":"query{issue(id:\"IDENTIFIER\"){id}}"}'
 ```
 
-4. Get target state UUID:
+## Step 5: Get Target State UUID
+
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $API_KEY" \
@@ -34,7 +49,8 @@ curl -s -X POST https://api.linear.app/graphql \
   -d '{"query":"query{workflowStates(filter:{name:{eq:\"TARGET_STATUS\"}}){nodes{id name}}}"}'
 ```
 
-5. Update issue:
+## Step 6: Update Issue
+
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $API_KEY" \
@@ -42,4 +58,8 @@ curl -s -X POST https://api.linear.app/graphql \
   -d '{"query":"mutation{issueUpdate(id:\"ISSUE_UUID\",input:{stateId:\"STATE_UUID\"}){issue{id identifier state{name}}}}"}'
 ```
 
-6. Confirm the status change to user.
+## Step 7: Confirm
+
+Confirm the status change to user:
+- Issue identifier
+- New status

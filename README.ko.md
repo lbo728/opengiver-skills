@@ -11,7 +11,7 @@ Claude Code용 Linear GraphQL API 플러그인. MCP 없이 curl로 직접 호출
 - **이슈 업데이트**: 상태 변경 (진행중, 완료 등)
 - **댓글 추가**: 이슈에 댓글 달기
 - **PR 업데이트**: PR 생성 + 댓글 + 상태 변경을 한 번에
-- **자동 설정**: 단일 명령어로 설정 완료
+- **계층형 설정**: User 레벨 API 키 + 프로젝트 레벨 팀/프로젝트 설정
 
 ## 설치
 
@@ -49,29 +49,58 @@ cp -r linear-simple-skill/plugins/linear-simple ~/.claude/plugins/
 
 설치 후 Linear API를 설정하세요:
 
-### 옵션 1: 슬래시 명령어
 ```bash
 /linear-simple:setup
 ```
 
-### 옵션 2: 자연어
-```
-"Linear 설정해줘"
-"Linear API 연동해줘"
-```
-
 Claude가 자동으로:
 1. Linear API 키를 요청합니다 (Linear 설정 > API에서 발급)
-2. 팀 정보를 자동으로 가져옵니다
-3. `~/.config/linear-simple/config.json`에 설정을 저장합니다
+2. API 키를 `~/.config/linear-simple/config.json`에 저장합니다
+3. "이 워크스페이스에 Linear 팀/프로젝트를 설정할까요?" (Yes/No)
+   - **Yes** → 팀/프로젝트 선택 → `.claude/linear-simple.json`에 저장 (`.gitignore`에 추가됨)
+   - **No** → user config의 기본 팀 사용
 
-설정은 `~/.config/linear-simple/config.json`에서 직접 확인하고 수정할 수 있습니다.
+팀원과 워크스페이스 설정을 공유하려면 `.gitignore`에서 `.claude/linear-simple.json`을 제거하세요.
+
+## 설정 파일
+
+### 계층형 설정 구조
+
+| 레벨 | 위치 | 내용 |
+|------|------|------|
+| User | `~/.config/linear-simple/config.json` | API 키, 기본 팀 |
+| Project | `.claude/linear-simple.json` | 팀, 프로젝트 (워크스페이스별) |
+
+### User Config (`~/.config/linear-simple/config.json`)
+```json
+{
+  "api_key": "lin_api_xxxxx",
+  "default_team_id": "uuid",
+  "default_team_key": "BYU",
+  "default_team_name": "팀 이름"
+}
+```
+
+### Project Config (`.claude/linear-simple.json`)
+```json
+{
+  "team_id": "uuid",
+  "team_key": "BYU",
+  "team_name": "팀 이름",
+  "project_id": "uuid",
+  "project_name": "Bookgolas"
+}
+```
+
+**로딩 우선순위:**
+1. 프로젝트 config (있으면) → 팀/프로젝트 정보
+2. User config → API 키 + fallback 팀
 
 ## 사용법
 
 ### 슬래시 명령어
 ```bash
-/linear-simple:setup                        # API 설정
+/linear-simple:setup                        # API 및 프로젝트 설정
 /linear-simple:get BYU-125                  # 이슈 상세 조회
 /linear-simple:list                         # 최근 이슈 목록 (개수 물어봄)
 /linear-simple:list 10                      # 최근 10개 이슈 목록
@@ -133,8 +162,6 @@ Claude가 자동으로:
 "작업 마무리해줘 - PR 만들고 이슈는 리뷰중으로"
 ```
 
-두 방식 모두 사용 가능합니다!
-
 ## 토큰 효율성: MCP vs Skill
 
 | 방식 | 토큰 (10회 작업) |
@@ -144,21 +171,6 @@ Claude가 자동으로:
 | **절감** | **~50,000 토큰 (9%)** |
 
 긴 대화에서는 효율성이 크게 증가합니다 (최대 99% 절감).
-
-## 설정 파일
-
-설정 파일 위치: `~/.config/linear-simple/config.json`
-
-```json
-{
-  "apiKey": "lin_api_xxxxx",
-  "teamId": "uuid",
-  "teamKey": "BYU",
-  "teamName": "팀 이름"
-}
-```
-
-재설정하려면 `/linear-simple:setup`을 다시 실행하거나 JSON 파일을 직접 수정하세요.
 
 ## 저장소 구조
 

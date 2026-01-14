@@ -8,20 +8,51 @@ allowed-tools: Bash(curl:*), Bash(cat:*), AskUserQuestion
 
 Create new issue with title: $ARGUMENTS
 
-## Steps
+## Step 1: Load Config (Hierarchical)
 
-1. Check if title is provided
-   - If `$ARGUMENTS` is empty, ask the user: "What title and description should I use for the issue?"
-   - Wait for user response before proceeding
-
-2. Read config:
 ```bash
-CONFIG=$(cat ~/.config/linear-simple/config.json)
-API_KEY=$(echo $CONFIG | grep -o '"apiKey":"[^"]*"' | cut -d'"' -f4)
-TEAM_ID=$(echo $CONFIG | grep -o '"teamId":"[^"]*"' | cut -d'"' -f4)
+# Try project config first
+PROJECT_CONFIG=$(cat .claude/linear-simple.json 2>/dev/null)
+
+# Fallback to user config
+USER_CONFIG=$(cat ~/.config/linear-simple/config.json 2>/dev/null)
 ```
 
-3. Create the issue:
+If no config found, prompt: "Linear 설정이 없습니다. 지금 설정할까요?" (Yes/No)
+
+## Step 2: Check Title Parameter
+
+If `$ARGUMENTS` is empty:
+- Use AskUserQuestion: "What title and description should I use for the issue?"
+- Wait for user response before proceeding
+
+## Step 3: Extract Values
+
+```bash
+# API key from user config
+API_KEY=$(echo $USER_CONFIG | grep -o '"api_key":"[^"]*"' | cut -d'"' -f4)
+
+# Team/Project from project config or user config fallback
+if [ -n "$PROJECT_CONFIG" ]; then
+  TEAM_ID=$(echo $PROJECT_CONFIG | grep -o '"team_id":"[^"]*"' | cut -d'"' -f4)
+  PROJECT_ID=$(echo $PROJECT_CONFIG | grep -o '"project_id":"[^"]*"' | cut -d'"' -f4)
+else
+  TEAM_ID=$(echo $USER_CONFIG | grep -o '"default_team_id":"[^"]*"' | cut -d'"' -f4)
+  PROJECT_ID=""
+fi
+```
+
+## Step 4: Create Issue
+
+**If project_id is set** (assign to specific project):
+```bash
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"query\":\"mutation{issueCreate(input:{title:\\\"TITLE\\\" teamId:\\\"$TEAM_ID\\\" projectId:\\\"$PROJECT_ID\\\" description:\\\"DESCRIPTION\\\" priority:3}){issue{id identifier title url project{name}}}}\"}"
+```
+
+**If no project_id**:
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $API_KEY" \
@@ -29,8 +60,12 @@ curl -s -X POST https://api.linear.app/graphql \
   -d "{\"query\":\"mutation{issueCreate(input:{title:\\\"TITLE\\\" teamId:\\\"$TEAM_ID\\\" description:\\\"DESCRIPTION\\\" priority:3}){issue{id identifier title url}}}\"}"
 ```
 
-If user provides description or priority, include them in the mutation.
-
 Priority values: 0=none, 1=urgent, 2=high, 3=medium, 4=low
 
-4. Show the created issue URL to user.
+## Step 5: Confirm
+
+Show the created issue:
+- Identifier
+- Title
+- Project (if assigned)
+- URL

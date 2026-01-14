@@ -11,7 +11,7 @@ A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, impr
 - **Update Issue**: Change status (In Progress, Done, etc.)
 - **Add Comment**: Post comments to issues
 - **PR Update**: Create PR + add comment + update status in one command
-- **Auto Setup**: Configure with a single command
+- **Hierarchical Config**: User-level API key + project-level team/project settings
 
 ## Installation
 
@@ -49,29 +49,58 @@ cp -r linear-simple-skill/plugins/linear-simple ~/.claude/plugins/
 
 After installation, configure your Linear API:
 
-### Option 1: Slash Command
 ```bash
 /linear-simple:setup
 ```
 
-### Option 2: Natural Language
-```
-"Configure Linear API"
-"Set up Linear integration"
-```
-
 Claude will:
 1. Ask for your Linear API key (get from Linear Settings > API)
-2. Automatically fetch your team info
-3. Save configuration to `~/.config/linear-simple/config.json`
+2. Save API key to `~/.config/linear-simple/config.json`
+3. Ask: "Set up Linear team/project for this workspace?" (Yes/No)
+   - **Yes** → Select team/project → Save to `.claude/linear-simple.json` (added to `.gitignore`)
+   - **No** → Use default team from user config
 
-You can view and edit your settings in `~/.config/linear-simple/config.json`.
+To share workspace config with your team, remove `.claude/linear-simple.json` from `.gitignore`.
+
+## Configuration
+
+### Hierarchical Config Structure
+
+| Level | Location | Contains |
+|-------|----------|----------|
+| User | `~/.config/linear-simple/config.json` | API key, default team |
+| Project | `.claude/linear-simple.json` | Team, project (workspace-specific) |
+
+### User Config (`~/.config/linear-simple/config.json`)
+```json
+{
+  "api_key": "lin_api_xxxxx",
+  "default_team_id": "uuid",
+  "default_team_key": "BYU",
+  "default_team_name": "Team Name"
+}
+```
+
+### Project Config (`.claude/linear-simple.json`)
+```json
+{
+  "team_id": "uuid",
+  "team_key": "BYU",
+  "team_name": "Team Name",
+  "project_id": "uuid",
+  "project_name": "Bookgolas"
+}
+```
+
+**Loading Priority:**
+1. Project config (if exists) → for team/project
+2. User config → for API key + fallback team
 
 ## Usage
 
 ### Slash Commands
 ```bash
-/linear-simple:setup                        # Configure API
+/linear-simple:setup                        # Configure API and project
 /linear-simple:get BYU-125                  # Get issue details
 /linear-simple:list                         # List recent issues (asks for count)
 /linear-simple:list 10                      # List recent 10 issues
@@ -133,8 +162,6 @@ You can view and edit your settings in `~/.config/linear-simple/config.json`.
 "Finish this task - create PR and mark issue as In Review"
 ```
 
-Both methods work interchangeably!
-
 ## Token Efficiency: MCP vs Skill
 
 | Method | Tokens (10 operations) |
@@ -144,21 +171,6 @@ Both methods work interchangeably!
 | **Saved** | **~50,000 tokens (9%)** |
 
 In longer conversations, efficiency gains increase significantly (up to 99% savings).
-
-## Configuration
-
-Config file location: `~/.config/linear-simple/config.json`
-
-```json
-{
-  "apiKey": "lin_api_xxxxx",
-  "teamId": "uuid",
-  "teamKey": "BYU",
-  "teamName": "Your Team Name"
-}
-```
-
-To reconfigure, run `/linear-simple:setup` again or edit the JSON file directly.
 
 ## Repository Structure
 
