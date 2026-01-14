@@ -12,54 +12,42 @@ description: |
 
 Direct Linear GraphQL API call guide.
 
+## Config Location
+
+`~/.config/linear-simple/config.json`
+
+```json
+{
+  "apiKey": "lin_api_xxxxx",
+  "teamId": "uuid",
+  "teamKey": "BYU",
+  "teamName": "Team Name"
+}
+```
+
+Read config before any API call:
+```bash
+CONFIG=$(cat ~/.config/linear-simple/config.json)
+API_KEY=$(echo $CONFIG | grep -o '"apiKey":"[^"]*"' | cut -d'"' -f4)
+TEAM_ID=$(echo $CONFIG | grep -o '"teamId":"[^"]*"' | cut -d'"' -f4)
+TEAM_KEY=$(echo $CONFIG | grep -o '"teamKey":"[^"]*"' | cut -d'"' -f4)
+```
+
 ## Setup Command
 
 When user says `/linear setup` or needs to configure Linear:
 
 1. Ask user for their Linear API key (get from Linear Settings > API)
-2. Save to config and fetch team info automatically:
-
+2. Create config directory: `mkdir -p ~/.config/linear-simple`
+3. Fetch team info:
 ```bash
-# Create config directory
-mkdir -p ~/.config/linear-simple
-
-# Save API key (replace with user's key)
-echo 'export LINEAR_API_KEY="lin_api_xxxxx"' > ~/.config/linear-simple/config
-
-# Fetch and save team info
-source ~/.config/linear-simple/config
-TEAM_DATA=$(curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: USER_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"query":"query{teams{nodes{id name key}}}"}')
-
-# Extract team info (use jq or parse JSON)
-TEAM_ID=$(echo $TEAM_DATA | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-TEAM_KEY=$(echo $TEAM_DATA | grep -o '"key":"[^"]*"' | head -1 | cut -d'"' -f4)
-
-echo "export LINEAR_TEAM_ID=\"$TEAM_ID\"" >> ~/.config/linear-simple/config
-echo "export LINEAR_TEAM_KEY=\"$TEAM_KEY\"" >> ~/.config/linear-simple/config
-
-# Fetch and save workflow states
-STATES=$(curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"query{workflowStates{nodes{id name type}}}"}')
-
-# Parse states and save (extract each state ID)
-# Example: LINEAR_STATE_TODO="uuid", LINEAR_STATE_IN_PROGRESS="uuid", etc.
+  -d '{"query":"query{teams{nodes{id name key}}}"}'
 ```
-
-3. Confirm setup is complete and show team info to user
-
-## Config Location
-
-`~/.config/linear-simple/config`
-
-Load before any API call:
-```bash
-source ~/.config/linear-simple/config
-```
+4. Save as JSON to `~/.config/linear-simple/config.json`
+5. Tell user: "Settings saved to `~/.config/linear-simple/config.json`. You can view and edit your configuration there."
 
 ## API Endpoint
 
@@ -69,56 +57,50 @@ source ~/.config/linear-simple/config
 
 ### Get Issue (by identifier)
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"query\":\"query{issue(id:\\\"${LINEAR_TEAM_KEY}-125\\\"){id identifier title description state{name} priority url}}\"}"
+  -d "{\"query\":\"query{issue(id:\\\"BYU-125\\\"){id identifier title description state{name} priority url}}\"}"
 ```
 
 ### List Issues
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"query\":\"query{issues(first:10,filter:{team:{key:{eq:\\\"$LINEAR_TEAM_KEY\\\"}}}){nodes{id identifier title state{name} priority}}}\"}"
+  -d "{\"query\":\"query{issues(first:10,filter:{team:{key:{eq:\\\"$TEAM_KEY\\\"}}}){nodes{id identifier title state{name} priority}}}\"}"
 ```
 
 ### Create Issue
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"query\":\"mutation{issueCreate(input:{title:\\\"Title\\\" teamId:\\\"$LINEAR_TEAM_ID\\\" description:\\\"Description\\\" priority:3}){issue{id identifier title url}}}\"}"
+  -d "{\"query\":\"mutation{issueCreate(input:{title:\\\"Title\\\" teamId:\\\"$TEAM_ID\\\" description:\\\"Description\\\" priority:3}){issue{id identifier title url}}}\"}"
 ```
 
 Priority: 0=none, 1=urgent, 2=high, 3=medium, 4=low
 
 ### Update Issue Status
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"mutation{issueUpdate(id:\"issue-uuid\",input:{stateId:\"state-uuid\"}){issue{id identifier state{name}}}}"}'
 ```
 
 ### Add Comment
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"mutation{commentCreate(input:{issueId:\"issue-uuid\",body:\"Comment content\"}){comment{id body}}}"}'
 ```
 
 ### Delete Issue
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"mutation{issueDelete(id:\"issue-uuid\"){success}}"}'
 ```
@@ -127,9 +109,8 @@ curl -s -X POST https://api.linear.app/graphql \
 
 To find state IDs for status changes:
 ```bash
-source ~/.config/linear-simple/config
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"query{workflowStates{nodes{id name type}}}"}'
 ```
@@ -140,47 +121,51 @@ Common state types: `backlog`, `unstarted`, `started`, `completed`, `canceled`
 
 ### 1. Get Issue and Update Status
 ```bash
-source ~/.config/linear-simple/config
-
 # 1. Get issue to obtain ID
 ISSUE=$(curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"query{issue(id:\"BYU-125\"){id}}"}')
 
 # 2. Get "In Progress" state ID
 STATES=$(curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"query{workflowStates(filter:{name:{eq:\"In Progress\"}}){nodes{id}}}"}')
 
 # 3. Update status
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query":"mutation{issueUpdate(id:\"issue-id\",input:{stateId:\"state-id\"}){issue{state{name}}}}"}'
 ```
 
-### 2. Update Issue After PR Merge
+### 2. PR + Comment + Status Update (Combined)
+
+When user says "Create PR and update Linear issue":
+
+1. Identify issue from branch name or context (e.g., `feature/BYU-125-feature-name`)
+2. Create PR using `gh pr create`
+3. Add PR URL as comment to Linear issue
+4. Update issue status to "In Review"
+
 ```bash
-source ~/.config/linear-simple/config
-
-# Add comment
+# Add comment with PR link
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"query":"mutation{commentCreate(input:{issueId:\"issue-uuid\",body:\"PR merged: https://github.com/...\"}){comment{id}}}"}'
+  -d '{"query":"mutation{commentCreate(input:{issueId:\"issue-uuid\",body:\"PR created: https://github.com/...\"}){comment{id}}}"}'
 
-# Get "Done" state ID and update
-DONE_STATE=$(curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+# Get "In Review" state ID and update
+IN_REVIEW_STATE=$(curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"query":"query{workflowStates(filter:{name:{eq:\"Done\"}}){nodes{id}}}"}')
+  -d '{"query":"query{workflowStates(filter:{name:{eq:\"In Review\"}}){nodes{id}}}"}')
 
 curl -s -X POST https://api.linear.app/graphql \
-  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Authorization: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"query":"mutation{issueUpdate(id:\"issue-uuid\",input:{stateId:\"done-state-id\"}){issue{state{name}}}}"}'
+  -d '{"query":"mutation{issueUpdate(id:\"issue-uuid\",input:{stateId:\"in-review-state-id\"}){issue{state{name}}}}"}'
 ```
 
 ## Error Handling

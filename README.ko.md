@@ -10,7 +10,7 @@ Claude Code용 Linear GraphQL API 플러그인. MCP 없이 curl로 직접 호출
 - **이슈 조회**: 식별자로 조회 (예: BYU-125)
 - **이슈 업데이트**: 상태 변경 (진행중, 완료 등)
 - **댓글 추가**: 이슈에 댓글 달기
-- **이슈 삭제**
+- **PR 업데이트**: PR 생성 + 댓글 + 상태 변경을 한 번에
 - **자동 설정**: 단일 명령어로 설정 완료
 
 ## 설치
@@ -63,7 +63,9 @@ cp -r linear-simple-skill/plugins/linear-simple ~/.claude/plugins/
 Claude가 자동으로:
 1. Linear API 키를 요청합니다 (Linear 설정 > API에서 발급)
 2. 팀 정보를 자동으로 가져옵니다
-3. `~/.config/linear-simple/config`에 설정을 저장합니다
+3. `~/.config/linear-simple/config.json`에 설정을 저장합니다
+
+설정은 `~/.config/linear-simple/config.json`에서 직접 확인하고 수정할 수 있습니다.
 
 ## 사용법
 
@@ -76,43 +78,59 @@ Claude가 자동으로:
 /linear-simple:create "API 버그 수정"        # 새 이슈 생성
 /linear-simple:status BYU-125 "In Progress" # 상태 변경
 /linear-simple:comment BYU-125 "완료!"       # 댓글 추가
+/linear-simple:pr-update                    # PR + 댓글 + 상태 업데이트
 ```
 
 ### 자연어
 
 **이슈 조회**
 ```
-"BYU-125 조회해줘"
-"BYU-125 이슈 보여줘"
-"BYU-125 상태가 뭐야?"
+"BYU-125 이슈를 읽고 구현 계획을 세워줘"
+"BYU-125 내용이 뭐야? 요구사항 파악해야해"
+"BYU-125 상세 보여줘"
 ```
 
 **이슈 목록**
 ```
 "최근 10개 이슈 보여줘"
-"이슈 5개만 보여줘"
-"이슈 리스트 보여줘"
+"지금 진행중인 이슈들 뭐 있어?"
+"백로그 이슈 리스트 보여줘"
 ```
 
 **이슈 생성**
 ```
-"이슈 만들어줘: API 버그 수정"
-"'문서 업데이트' 제목으로 이슈 생성해줘"
-"새 이슈 추가해줘: 로그인 모듈 리팩토링"
+"이슈 생성해줘"
+→ 에이전트: "어떤 제목과 설명으로 만들까요?"
+→ 사용자: "제목: [Product] 결제 플로우 구현
+          설명: (제목에 맞게 적당히 작성해줘)"
+
+"방금 얘기한 로그인 버그 이슈로 만들어줘"
+"이슈 추가해: API 속도 제한 구현"
 ```
 
 **상태 변경**
 ```
-"BYU-125 상태를 진행중으로 바꿔줘"
-"BYU-125 완료로 변경해줘"
-"BYU-125 리뷰중으로 설정해"
+"BYU-125 상태를 진행중으로 바꿔"
+"BYU-125 완료 처리해줘"
+"BYU-125 리뷰중으로 변경해"
 ```
 
 **댓글 추가**
 ```
-"BYU-125에 '작업 시작' 댓글 달아줘"
-"BYU-125에 코멘트 남겨줘: 수정 완료"
-"BYU-125에 '추가 정보 필요' 댓글 달아"
+"PR 만들고, 이 작업 이슈에 코멘트 달아줘"
+→ 에이전트가 컨텍스트에서 이슈 번호 확인 후 PR 생성, PR 내용을 코멘트로 등록
+
+"BYU-125에 '구현 시작' 코멘트 달아"
+"BYU-125에 오늘 진행 상황 메모해줘"
+```
+
+**PR + 업데이트 (통합)**
+```
+"PR 생성하고 Linear 이슈도 업데이트해"
+→ 에이전트: PR 생성 → PR 링크를 코멘트로 추가 → 상태를 "In Review"로 변경
+
+"이 PR 푸시하고 Linear랑 동기화해줘"
+"작업 마무리해줘 - PR 만들고 이슈는 리뷰중으로"
 ```
 
 두 방식 모두 사용 가능합니다!
@@ -129,14 +147,18 @@ Claude가 자동으로:
 
 ## 설정 파일
 
-설정 파일 위치: `~/.config/linear-simple/config`
+설정 파일 위치: `~/.config/linear-simple/config.json`
 
-포함 내용:
-- `LINEAR_API_KEY` - Linear API 키
-- `LINEAR_TEAM_ID` - 팀 UUID
-- `LINEAR_TEAM_KEY` - 팀 키 (예: BYU)
+```json
+{
+  "apiKey": "lin_api_xxxxx",
+  "teamId": "uuid",
+  "teamKey": "BYU",
+  "teamName": "팀 이름"
+}
+```
 
-재설정하려면 `/linear-simple:setup`을 다시 실행하세요.
+재설정하려면 `/linear-simple:setup`을 다시 실행하거나 JSON 파일을 직접 수정하세요.
 
 ## 저장소 구조
 
@@ -154,7 +176,8 @@ linear-simple-skill/
 │       │   ├── list.md           # /linear-simple:list
 │       │   ├── create.md         # /linear-simple:create
 │       │   ├── status.md         # /linear-simple:status
-│       │   └── comment.md        # /linear-simple:comment
+│       │   ├── comment.md        # /linear-simple:comment
+│       │   └── pr-update.md      # /linear-simple:pr-update
 │       └── skills/
 │           └── linear-simple/
 │               ├── SKILL.md      # 자연어 스킬

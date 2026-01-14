@@ -10,7 +10,7 @@ A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, impr
 - **Get Issue**: Query by identifier (e.g., BYU-125)
 - **Update Issue**: Change status (In Progress, Done, etc.)
 - **Add Comment**: Post comments to issues
-- **Delete Issue**
+- **PR Update**: Create PR + add comment + update status in one command
 - **Auto Setup**: Configure with a single command
 
 ## Installation
@@ -63,7 +63,9 @@ After installation, configure your Linear API:
 Claude will:
 1. Ask for your Linear API key (get from Linear Settings > API)
 2. Automatically fetch your team info
-3. Save configuration to `~/.config/linear-simple/config`
+3. Save configuration to `~/.config/linear-simple/config.json`
+
+You can view and edit your settings in `~/.config/linear-simple/config.json`.
 
 ## Usage
 
@@ -76,43 +78,59 @@ Claude will:
 /linear-simple:create "Fix API bug"         # Create new issue
 /linear-simple:status BYU-125 "In Progress" # Update status
 /linear-simple:comment BYU-125 "Done!"      # Add comment
+/linear-simple:pr-update                    # PR + comment + status update
 ```
 
 ### Natural Language
 
 **Get Issue**
 ```
-"Get BYU-125"
-"Show me issue BYU-125"
-"What's the status of BYU-125?"
+"Read issue BYU-125 and help me plan the implementation"
+"What's in BYU-125? I need to understand the requirements"
+"Show me BYU-125 details"
 ```
 
 **List Issues**
 ```
-"Show recent 10 issues"
-"List the last 5 issues"
-"What issues do we have?"
+"Show me the recent 10 issues"
+"What issues are currently in progress?"
+"List all backlog items"
 ```
 
 **Create Issue**
 ```
-"Create an issue: Fix API bug"
-"Make a new issue titled 'Update documentation'"
-"Add issue: Refactor login module"
+"Create an issue"
+→ Agent: "What title and description should I use?"
+→ You: "Title: [Product] Implement checkout flow
+        Description: (generate something appropriate based on the title)"
+
+"Make a new issue for the login bug we just discussed"
+"Add an issue: API rate limiting implementation"
 ```
 
 **Update Status**
 ```
-"Change BYU-125 status to In Progress"
+"Change BYU-125 to In Progress"
 "Mark BYU-125 as Done"
 "Set BYU-125 to In Review"
 ```
 
 **Add Comment**
 ```
-"Add comment 'Started working' to BYU-125"
-"Comment on BYU-125: This is fixed now"
-"Post 'Need more info' on BYU-125"
+"Create a PR and add a comment to this task's issue"
+→ Agent checks context for issue number, creates PR, and posts PR details as comment
+
+"Comment on BYU-125: Started implementation"
+"Add note to BYU-125 with today's progress"
+```
+
+**PR + Update (Combined)**
+```
+"Create PR and update the Linear issue"
+→ Agent: Creates PR, adds PR link as comment, changes status to "In Review"
+
+"Push this PR and sync with Linear"
+"Finish this task - create PR and mark issue as In Review"
 ```
 
 Both methods work interchangeably!
@@ -129,14 +147,18 @@ In longer conversations, efficiency gains increase significantly (up to 99% savi
 
 ## Configuration
 
-Config file location: `~/.config/linear-simple/config`
+Config file location: `~/.config/linear-simple/config.json`
 
-Contains:
-- `LINEAR_API_KEY` - Your Linear API key
-- `LINEAR_TEAM_ID` - Your team's UUID
-- `LINEAR_TEAM_KEY` - Your team's key (e.g., BYU)
+```json
+{
+  "apiKey": "lin_api_xxxxx",
+  "teamId": "uuid",
+  "teamKey": "BYU",
+  "teamName": "Your Team Name"
+}
+```
 
-To reconfigure, run `/linear-simple:setup` again.
+To reconfigure, run `/linear-simple:setup` again or edit the JSON file directly.
 
 ## Repository Structure
 
@@ -154,7 +176,8 @@ linear-simple-skill/
 │       │   ├── list.md           # /linear-simple:list
 │       │   ├── create.md         # /linear-simple:create
 │       │   ├── status.md         # /linear-simple:status
-│       │   └── comment.md        # /linear-simple:comment
+│       │   ├── comment.md        # /linear-simple:comment
+│       │   └── pr-update.md      # /linear-simple:pr-update
 │       └── skills/
 │           └── linear-simple/
 │               ├── SKILL.md      # Natural language skill
