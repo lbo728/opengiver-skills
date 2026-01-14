@@ -49,7 +49,7 @@ After installation, configure your Linear API:
 
 ### Option 1: Slash Command
 ```bash
-/linear-simple setup
+/linear-simple:setup
 ```
 
 ### Option 2: Natural Language
@@ -65,11 +65,14 @@ Claude will:
 
 ## Usage
 
-### Slash Command
+### Slash Commands
 ```bash
-/linear-simple get BYU-125
-/linear-simple create "Fix API bug"
-/linear-simple status BYU-125 "In Progress"
+/linear-simple:setup                        # Configure API
+/linear-simple:get BYU-125                  # Get issue details
+/linear-simple:list                         # List recent issues
+/linear-simple:create "Fix API bug"         # Create new issue
+/linear-simple:status BYU-125 "In Progress" # Update status
+/linear-simple:comment BYU-125 "Done!"      # Add comment
 ```
 
 ### Natural Language
@@ -103,7 +106,7 @@ Contains:
 - `LINEAR_TEAM_ID` - Your team's UUID
 - `LINEAR_TEAM_KEY` - Your team's key (e.g., BYU)
 
-To reconfigure, run `/linear-simple setup` again.
+To reconfigure, run `/linear-simple:setup` again.
 
 ## Repository Structure
 
@@ -116,7 +119,12 @@ linear-simple-skill/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
 │       ├── commands/
-│       │   └── linear-simple.md  # Slash command definition
+│       │   ├── setup.md          # /linear-simple:setup
+│       │   ├── get.md            # /linear-simple:get
+│       │   ├── list.md           # /linear-simple:list
+│       │   ├── create.md         # /linear-simple:create
+│       │   ├── status.md         # /linear-simple:status
+│       │   └── comment.md        # /linear-simple:comment
 │       └── skills/
 │           └── linear-simple/
 │               ├── SKILL.md      # Natural language skill
