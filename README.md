@@ -1,5 +1,7 @@
 # Linear Simple Skill
 
+[English](README.md) | [한국어](README.ko.md)
+
 A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, improving token efficiency by 50-70%.
 
 ## Features
@@ -54,8 +56,8 @@ After installation, configure your Linear API:
 
 ### Option 2: Natural Language
 ```
-"Linear setup 해줘"
 "Configure Linear API"
+"Set up Linear integration"
 ```
 
 Claude will:
@@ -69,20 +71,48 @@ Claude will:
 ```bash
 /linear-simple:setup                        # Configure API
 /linear-simple:get BYU-125                  # Get issue details
-/linear-simple:list                         # List recent issues
+/linear-simple:list                         # List recent issues (asks for count)
+/linear-simple:list 10                      # List recent 10 issues
 /linear-simple:create "Fix API bug"         # Create new issue
 /linear-simple:status BYU-125 "In Progress" # Update status
 /linear-simple:comment BYU-125 "Done!"      # Add comment
 ```
 
 ### Natural Language
+
+**Get Issue**
 ```
 "Get BYU-125"
-"BYU-125 조회해줘"
-"Create an issue: Fix API bug"
-"Change BYU-125 status to In Progress"
-"Add comment 'Started working' to BYU-125"
+"Show me issue BYU-125"
+"What's the status of BYU-125?"
+```
+
+**List Issues**
+```
 "Show recent 10 issues"
+"List the last 5 issues"
+"What issues do we have?"
+```
+
+**Create Issue**
+```
+"Create an issue: Fix API bug"
+"Make a new issue titled 'Update documentation'"
+"Add issue: Refactor login module"
+```
+
+**Update Status**
+```
+"Change BYU-125 status to In Progress"
+"Mark BYU-125 as Done"
+"Set BYU-125 to In Review"
+```
+
+**Add Comment**
+```
+"Add comment 'Started working' to BYU-125"
+"Comment on BYU-125: This is fixed now"
+"Post 'Need more info' on BYU-125"
 ```
 
 Both methods work interchangeably!
@@ -130,7 +160,8 @@ linear-simple-skill/
 │               ├── SKILL.md      # Natural language skill
 │               └── references/
 │                   └── graphql-patterns.md
-└── README.md
+├── README.md
+└── README.ko.md
 ```
 
 ## License
