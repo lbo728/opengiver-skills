@@ -1,6 +1,6 @@
 # Linear Simple Skill
 
-A Claude Code skill for Linear GraphQL API. Direct curl calls without MCP, improving token efficiency by 50-70%.
+A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, improving token efficiency by 50-70%.
 
 ## Features
 
@@ -13,15 +13,37 @@ A Claude Code skill for Linear GraphQL API. Direct curl calls without MCP, impro
 
 ## Installation
 
-### Install as Claude Code Plugin
+### Method 1: Marketplace (Recommended)
 
 ```bash
-claude /plugin add https://github.com/lbo728/linear-simple-skill
+# Step 1: Add the marketplace
+/plugin marketplace add lbo728/linear-simple-skill
+
+# Step 2: Install the plugin
+/plugin install linear-simple@lbo728-marketplace
 ```
 
-### Setup (Required)
+### Method 2: Interactive UI
 
-Run the setup command in Claude Code:
+```bash
+# Open plugin manager
+/plugin
+
+# Navigate to "Marketplaces" tab → Add → Enter: lbo728/linear-simple-skill
+# Then go to "Discover" tab → Find "linear-simple" → Install
+```
+
+### Method 3: Manual Installation
+
+```bash
+# Clone and copy to your skills directory
+git clone https://github.com/lbo728/linear-simple-skill.git
+cp -r linear-simple-skill/plugins/linear-simple/skills/linear-simple ~/.claude/skills/
+```
+
+## Setup (Required)
+
+After installation, run:
 
 ```
 /linear setup
@@ -67,13 +89,22 @@ Contains:
 
 To reconfigure, run `/linear setup` again.
 
-## File Structure
+## Repository Structure
 
 ```
-linear-simple/
-├── SKILL.md                      # Main guide
-└── references/
-    └── graphql-patterns.md       # Advanced query patterns
+linear-simple-skill/
+├── .claude-plugin/
+│   └── marketplace.json          # Marketplace registry
+├── plugins/
+│   └── linear-simple/
+│       ├── .claude-plugin/
+│       │   └── plugin.json       # Plugin manifest
+│       └── skills/
+│           └── linear-simple/
+│               ├── SKILL.md      # Main skill guide
+│               └── references/
+│                   └── graphql-patterns.md
+└── README.md
 ```
 
 ## License
