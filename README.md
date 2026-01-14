@@ -9,7 +9,7 @@ A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, impr
 - **Update Issue**: Change status (In Progress, Done, etc.)
 - **Add Comment**: Post comments to issues
 - **Delete Issue**
-- **Auto Setup**: `/linear setup` command configures everything automatically
+- **Auto Setup**: Configure with a single command
 
 ## Installation
 
@@ -21,6 +21,8 @@ A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, impr
 
 # Step 2: Install the plugin
 /plugin install linear-simple@opengiver
+
+# Step 3: Restart Claude Code
 ```
 
 ### Method 2: Interactive UI
@@ -38,15 +40,22 @@ A Claude Code plugin for Linear GraphQL API. Direct curl calls without MCP, impr
 ```bash
 # Clone and copy to your skills directory
 git clone https://github.com/lbo728/linear-simple-skill.git
-cp -r linear-simple-skill/plugins/linear-simple/skills/linear-simple ~/.claude/skills/
+cp -r linear-simple-skill/plugins/linear-simple ~/.claude/plugins/
 ```
 
 ## Setup (Required)
 
-After installation, run:
+After installation, configure your Linear API:
 
+### Option 1: Slash Command
+```bash
+/linear-simple setup
 ```
-/linear setup
+
+### Option 2: Natural Language
+```
+"Linear setup 해줘"
+"Configure Linear API"
 ```
 
 Claude will:
@@ -54,19 +63,26 @@ Claude will:
 2. Automatically fetch your team info
 3. Save configuration to `~/.config/linear-simple/config`
 
-No manual environment variable setup needed!
-
 ## Usage
 
-Just use natural language:
+### Slash Command
+```bash
+/linear-simple get BYU-125
+/linear-simple create "Fix API bug"
+/linear-simple status BYU-125 "In Progress"
+```
 
+### Natural Language
 ```
 "Get BYU-125"
+"BYU-125 조회해줘"
 "Create an issue: Fix API bug"
 "Change BYU-125 status to In Progress"
 "Add comment 'Started working' to BYU-125"
 "Show recent 10 issues"
 ```
+
+Both methods work interchangeably!
 
 ## Token Efficiency: MCP vs Skill
 
@@ -87,7 +103,7 @@ Contains:
 - `LINEAR_TEAM_ID` - Your team's UUID
 - `LINEAR_TEAM_KEY` - Your team's key (e.g., BYU)
 
-To reconfigure, run `/linear setup` again.
+To reconfigure, run `/linear-simple setup` again.
 
 ## Repository Structure
 
@@ -99,9 +115,11 @@ linear-simple-skill/
 │   └── linear-simple/
 │       ├── .claude-plugin/
 │       │   └── plugin.json       # Plugin manifest
+│       ├── commands/
+│       │   └── linear-simple.md  # Slash command definition
 │       └── skills/
 │           └── linear-simple/
-│               ├── SKILL.md      # Main skill guide
+│               ├── SKILL.md      # Natural language skill
 │               └── references/
 │                   └── graphql-patterns.md
 └── README.md
