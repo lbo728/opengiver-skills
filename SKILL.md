@@ -12,6 +12,21 @@ description: |
 
 Direct Linear GraphQL API call guide.
 
+## ⚠️ Session Context: Issue Number Memory
+
+When you work with a Linear issue in this session (via get, create, comment, status, or pr-update):
+- **REMEMBER** the issue identifier (e.g., `BYU-125`) for the rest of the session
+- If user says "이 이슈에", "해당 이슈", "linear issue에", "이슈에 코멘트", etc. without specifying the identifier:
+  - Use the **most recently worked issue** from this session
+  - If no issue was worked on yet, ask user for the identifier
+
+**Example flow:**
+1. User: "BYU-125 조회해줘" → You get BYU-125, remember it
+2. User: "이 이슈에 코멘트 추가해" → Use BYU-125 (no need to ask)
+3. User: "상태를 In Progress로 변경해" → Use BYU-125 (no need to ask)
+
+---
+
 ## Setup Command
 
 When user says `/linear setup` or needs to configure Linear:

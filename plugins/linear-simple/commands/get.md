@@ -43,7 +43,13 @@ You MUST use **AskUserQuestion** to ask:
 - If no default team, tell user to run `/linear-simple:setup`
 - **STOP HERE**
 
-## Step 4: Extract Values
+## Step 4: Check Issue Identifier Parameter
+
+If `$ARGUMENTS` is empty or doesn't contain a valid issue identifier (e.g., `XXX-123` format):
+- Use AskUserQuestion: "어떤 이슈를 조회할까요? (예: BYU-125)"
+- Wait for response before proceeding
+
+## Step 5: Extract Values
 
 Only proceed here if config is valid:
 
@@ -59,7 +65,7 @@ else
 fi
 ```
 
-## Step 5: Fetch Issue
+## Step 6: Fetch Issue
 
 ```bash
 curl -s -X POST https://api.linear.app/graphql \
@@ -68,6 +74,6 @@ curl -s -X POST https://api.linear.app/graphql \
   -d '{"query":"query{issue(id:\"$ARGUMENTS\"){id identifier title description state{name} priority url assignee{name} project{name} createdAt updatedAt}}"}'
 ```
 
-## Step 6: Display
+## Step 7: Display
 
 Parse and display the issue information in a readable format.
