@@ -77,3 +77,38 @@ curl -s -X POST https://api.linear.app/graphql \
 ## Step 7: Display
 
 Parse and display the issue information in a readable format.
+
+## Step 8: Suggest Status Change (Post-Read Workflow)
+
+After displaying the issue, check if the status is eligible for change:
+
+**Skip this step if:**
+- Issue status is already "In Progress", "In Review", "Done", or "Canceled"
+
+**Otherwise, use AskUserQuestion:**
+- Question: "해당 이슈를 지금 진행하실건가요?"
+- Options:
+  - **Yes** - "상태를 'In Progress'로 변경합니다"
+  - **No** - "현재 상태를 유지합니다"
+
+**If user selects Yes:**
+1. Get the "In Progress" state UUID:
+```bash
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"query{workflowStates(filter:{name:{eq:\"In Progress\"}}){nodes{id name}}}"}'
+```
+
+2. Update the issue status:
+```bash
+curl -s -X POST https://api.linear.app/graphql \
+  -H "Authorization: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"mutation{issueUpdate(id:\"ISSUE_UUID\",input:{stateId:\"STATE_UUID\"}){issue{identifier state{name}}}}"}'
+```
+
+3. Confirm: "✅ [ISSUE_ID] 상태가 'In Progress'로 변경되었습니다."
+
+**If user selects No:**
+- Do nothing, proceed normally.
