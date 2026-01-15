@@ -55,6 +55,44 @@ When you work with a Linear issue in this session (via get, create, comment, sta
 
 ---
 
+## ⚠️ Post-Read Workflow: Suggest Status Change (MUST FOLLOW)
+
+After successfully reading/viewing a Linear issue:
+
+### Step 1: Present Issue Information
+- Show the issue details (title, description, status, priority, etc.)
+- Answer the user's question about the issue
+
+### Step 2: Check Current Status
+If the issue status is **NOT** already "In Progress":
+
+### Step 3: Ask User (MANDATORY)
+Use **AskUserQuestion** tool to ask:
+```
+Question: "해당 이슈를 지금 진행하실건가요?"
+Options:
+  - Yes: "상태를 'In Progress'로 변경합니다"
+  - No: "현재 상태를 유지합니다"
+```
+
+### Step 4: Handle Response
+- **If Yes**: Update issue status to "In Progress" using the Update Status API
+- **If No**: Do nothing, keep current status
+
+### Skip Conditions
+Do NOT ask if:
+- Issue is already "In Progress", "In Review", "Done", or "Canceled"
+- User explicitly asked NOT to change status
+- User is only querying for information (e.g., "이 이슈 뭐야?" without intent to work)
+
+**Example flow:**
+1. User: "BYU-125 조회해줘"
+2. You: Show issue details → Ask "해당 이슈를 지금 진행하실건가요?"
+3. User: Yes
+4. You: Update status to "In Progress" → Confirm change
+
+---
+
 ## ⚠️ CRITICAL: Config Check Flow (MUST FOLLOW)
 
 Before ANY Linear operation, you MUST:
