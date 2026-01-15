@@ -3,14 +3,42 @@ name: linear-simple
 description: |
   Direct Linear GraphQL API calls without MCP. Performs issue CRUD via curl.
   Use when: (1) Creating/reading/updating/deleting Linear issues, (2) Adding comments,
-  (3) XXX-NNN format identifier mentioned, (4) "linear" keyword included,
-  (5) User says "/linear setup" to configure API key and team.
-  Trigger examples: "Get BYU-125", "Create issue", "Change status to Done", "/linear setup"
+  (3) XXX-NNN format identifier mentioned (e.g., BYU-125, TEAM-42),
+  (4) "linear" keyword included, (5) User says "/linear setup" to configure API key and team,
+  (6) User mentions "이슈" (issue) in Korean - e.g., "이슈 확인해봐", "이슈를 읽어봐", "이 이슈", "해당 이슈"
+  Trigger examples: "Get BYU-125", "Create issue", "Change status to Done", "/linear setup",
+  "이슈 확인해봐", "이 이슈를 읽어봐", "이슈 조회", "이슈 생성해줘"
 ---
 
 # Linear Simple Skill
 
 Direct Linear GraphQL API calls with hierarchical config.
+
+## ⚠️ Ambiguous Issue Request Handling (MUST FOLLOW)
+
+When user says generic issue-related phrases like:
+- "이슈 확인해봐", "이 이슈를 읽어봐", "이슈 조회해줘"
+- "Check this issue", "Read the issue", "Look at this issue"
+
+**WITHOUT** specifying an issue identifier (e.g., BYU-125) or GitHub URL:
+
+### You MUST ask to clarify the issue type:
+
+```
+어떤 이슈를 확인할까요?
+
+1. **Linear 이슈** - 이슈 식별자를 알려주세요 (예: BYU-125, TEAM-42)
+2. **GitHub 이슈** - 이슈 URL을 알려주세요 (예: https://github.com/owner/repo/issues/1)
+
+또는 현재 저장소의 GitHub 이슈 번호만 알려주셔도 됩니다 (예: #123)
+```
+
+### Detection Rules:
+- **Linear issue**: `XXX-NNN` format (e.g., BYU-125, PROJ-42) → Proceed with Linear API
+- **GitHub issue**: URL containing `github.com/.../issues/` or `#N` format → Use `gh issue view` command
+- **Ambiguous**: No identifier provided → **MUST ASK** before proceeding
+
+---
 
 ## ⚠️ Session Context: Issue Number Memory
 
@@ -181,3 +209,33 @@ curl -s -X POST https://api.linear.app/graphql \
 
 - **401**: Invalid API key → `/linear-simple:setup`
 - **Config not found**: → `/linear-simple:setup`
+
+## GitHub Issue Handling
+
+When user specifies a GitHub issue (URL or `#N` format), use `gh` CLI:
+
+### Get GitHub Issue
+```bash
+# By URL
+gh issue view https://github.com/owner/repo/issues/123
+
+# By number (current repo)
+gh issue view 123
+
+# With JSON output for parsing
+gh issue view 123 --json title,body,state,labels,assignees,url
+```
+
+### List GitHub Issues
+```bash
+# List open issues
+gh issue list
+
+# List with limit
+gh issue list --limit 10
+
+# List with state filter
+gh issue list --state all
+```
+
+**Note**: GitHub issue handling is a convenience feature. For full GitHub workflow, consider dedicated GitHub tools.
