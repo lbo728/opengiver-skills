@@ -16,6 +16,7 @@ import type {
 } from './types.js';
 
 const CONFIG_PATH = path.join(os.homedir(), '.config', 'blog-material-gen', 'config.json');
+const LOG_DIR = path.join(os.homedir(), '.config', 'blog-material-gen', 'logs');
 
 interface UserConfig {
   api_key: string;
@@ -24,7 +25,41 @@ interface UserConfig {
   slack_webhook_url?: string;
 }
 
-async function sendSlackNotification(
+interface LogEntry {
+  timestamp: string;
+  success: boolean;
+  dailyBranch: string;
+  workspaceName: string;
+  result: PipelineResult;
+  duration: number;
+}
+
+function ensureLogDir(): void {
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  }
+}
+
+function saveLog(entry: LogEntry): string {
+  ensureLogDir();
+  const date = new Date().toISOString().split('T')[0];
+  const logFile = path.join(LOG_DIR, `${date}.json`);
+  
+  let logs: LogEntry[] = [];
+  if (fs.existsSync(logFile)) {
+    try {
+      logs = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+    } catch {
+      logs = [];
+    }
+  }
+  
+  logs.push(entry);
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+  return logFile;
+}
+
+async function sendSlackSuccessNotification(
   webhookUrl: string,
   result: PipelineResult,
   workspaceName: string,
@@ -98,6 +133,79 @@ async function sendSlackNotification(
 
     if (response.ok) {
       console.log('📨 Slack notification sent');
+    } else {
+      console.error('⚠️ Slack notification failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('⚠️ Slack notification error:', error);
+  }
+}
+
+async function sendSlackFailureNotification(
+  webhookUrl: string,
+  result: PipelineResult,
+  workspaceName: string,
+  dailyBranch: string,
+  logFilePath?: string,
+): Promise<void> {
+  const date = extractDateFromBranch(dailyBranch);
+  const errorMessages = result.errors?.join('\n• ') || '알 수 없는 오류';
+  
+  const message = {
+    blocks: [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: '❌ 블로그 소재 생성 실패',
+          emoji: true,
+        },
+      },
+      {
+        type: 'section',
+        fields: [
+          {
+            type: 'mrkdwn',
+            text: `*날짜:*\n${date}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*워크스페이스:*\n${workspaceName}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*대상 브랜치:*\n${dailyBranch}`,
+          },
+        ],
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*오류 내용:*\n• ${errorMessages}`,
+        },
+      },
+      ...(logFilePath ? [{
+        type: 'context',
+        elements: [
+          {
+            type: 'mrkdwn',
+            text: `📋 로그 파일: \`${logFilePath}\``,
+          },
+        ],
+      }] : []),
+    ],
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+
+    if (response.ok) {
+      console.log('📨 Slack failure notification sent');
     } else {
       console.error('⚠️ Slack notification failed:', await response.text());
     }
@@ -368,6 +476,7 @@ export async function generateBlogMaterial(config: PipelineConfig): Promise<Pipe
 }
 
 async function main() {
+  const startTime = Date.now();
   const args = process.argv.slice(2);
   let dailyBranch = args[0];
   const workingDirectory = args[1] || process.cwd();
@@ -404,12 +513,14 @@ async function main() {
 
   const result = await generateBlogMaterial(config);
   const workspaceName = extractWorkspaceName(workingDirectory);
+  const duration = Date.now() - startTime;
 
   console.log('\n📊 Pipeline Result:');
   console.log(`   Success: ${result.success}`);
   console.log(`   Mode: ${result.appended ? 'Appended to existing page' : 'Created new page'}`);
   console.log(`   Branches Analyzed: ${result.branchesAnalyzed}`);
   console.log(`   Blog Ideas Generated: ${result.blogIdeasGenerated}`);
+  console.log(`   Duration: ${(duration / 1000).toFixed(2)}s`);
   
   if (result.notionUrl) {
     console.log(`   Notion URL: ${result.notionUrl}`);
@@ -419,13 +530,34 @@ async function main() {
     console.log(`   Errors: ${result.errors.join(', ')}`);
   }
 
-  if (result.success && userConfig.slack_webhook_url) {
-    await sendSlackNotification(
-      userConfig.slack_webhook_url,
-      result,
-      workspaceName,
-      dailyBranch,
-    );
+  const logEntry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    success: result.success,
+    dailyBranch,
+    workspaceName,
+    result,
+    duration,
+  };
+  const logFilePath = saveLog(logEntry);
+  console.log(`   Log saved: ${logFilePath}`);
+
+  if (userConfig.slack_webhook_url) {
+    if (result.success) {
+      await sendSlackSuccessNotification(
+        userConfig.slack_webhook_url,
+        result,
+        workspaceName,
+        dailyBranch,
+      );
+    } else {
+      await sendSlackFailureNotification(
+        userConfig.slack_webhook_url,
+        result,
+        workspaceName,
+        dailyBranch,
+        logFilePath,
+      );
+    }
   }
 
   process.exit(result.success ? 0 : 1);

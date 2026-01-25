@@ -53,7 +53,7 @@ function detectLanguage(filePath: string): string | undefined {
   return ext ? langMap[ext] : undefined;
 }
 
-export async function getMergedFeatureBranches(
+export async function getMergedBranches(
   git: SimpleGit,
   dailyBranch: string,
 ): Promise<string[]> {
@@ -224,6 +224,20 @@ function generateBranchSummary(commits: CommitInfo[], filesChanged: FileChange[]
   return `${commits.length}개 커밋 (${typeDescriptions}), ${filesChanged.length}개 파일 변경 (+${totalAdditions}/-${totalDeletions}), 주요 언어: ${languages.join(', ') || 'N/A'}`;
 }
 
+export class BranchNotFoundError extends Error {
+  constructor(branchName: string) {
+    super(`Branch '${branchName}' does not exist. Please check the branch name and try again.`);
+    this.name = 'BranchNotFoundError';
+  }
+}
+
+export class NoMergedBranchesError extends Error {
+  constructor(dailyBranch: string) {
+    super(`No merged PR branches found in '${dailyBranch}'. Make sure there are merged PRs into this branch.`);
+    this.name = 'NoMergedBranchesError';
+  }
+}
+
 export async function analyzeDailyBranch(
   dailyBranch: string,
   workingDirectory: string,
@@ -233,46 +247,16 @@ export async function analyzeDailyBranch(
   console.log(`📂 Analyzing daily branch: ${dailyBranch}`);
   console.log(`📁 Working directory: ${workingDirectory}`);
 
-  const featureBranches = await getMergedFeatureBranches(git, dailyBranch);
-  console.log(`🔍 Found ${featureBranches.length} merged feature branches`);
+  const exists = await branchExists(workingDirectory, dailyBranch);
+  if (!exists) {
+    throw new BranchNotFoundError(dailyBranch);
+  }
+
+  const featureBranches = await getMergedBranches(git, dailyBranch);
+  console.log(`🔍 Found ${featureBranches.length} merged PR branches`);
 
   if (featureBranches.length === 0) {
-    console.log('⚠️  No merged feature branches found. Analyzing recent commits instead...');
-    const recentLog = await git.log(['-20', '--format=%H|%s']);
-    const recentCommits: CommitInfo[] = [];
-    
-    for (const commit of recentLog.all) {
-      const [hash, message] = (commit.message || commit.hash || '').split('|');
-      if (!hash) continue;
-      const parsed = parseConventionalCommit(message || '');
-      recentCommits.push({
-        hash: hash.substring(0, 7),
-        type: parsed.type,
-        scope: parsed.scope,
-        subject: parsed.subject,
-        files: [],
-        date: new Date().toISOString(),
-        author: 'unknown',
-      });
-    }
-
-    const diffSummary = await git.diffSummary(['HEAD~10', 'HEAD']);
-    const filesChanged: FileChange[] = diffSummary.files.slice(0, 20).map((f) => ({
-      path: f.file,
-      additions: f.insertions,
-      deletions: f.deletions,
-      diff: '',
-      language: detectLanguage(f.file),
-    }));
-
-    return [
-      {
-        branchName: dailyBranch,
-        commits: recentCommits,
-        filesChanged,
-        summary: generateBranchSummary(recentCommits, filesChanged),
-      },
-    ];
+    throw new NoMergedBranchesError(dailyBranch);
   }
 
   const analyses: BranchAnalysis[] = [];
@@ -315,5 +299,16 @@ export async function getRecentDailyBranches(workingDirectory: string): Promise<
       .slice(0, 10);
   } catch {
     return [];
+  }
+}
+
+export async function branchExists(workingDirectory: string, branchName: string): Promise<boolean> {
+  const git: SimpleGit = simpleGit(workingDirectory);
+  try {
+    const branches = await git.branch(['-a']);
+    const normalizedBranches = branches.all.map((b) => b.replace('remotes/origin/', ''));
+    return normalizedBranches.some((b) => b === branchName || b.endsWith(`/${branchName}`));
+  } catch {
+    return false;
   }
 }
