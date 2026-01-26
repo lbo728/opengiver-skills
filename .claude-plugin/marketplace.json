@@ -19,6 +19,12 @@
       "source": "./plugins/blog-material-gen",
       "description": "Auto-generate blog material from daily branch to Notion with Slack notifications",
       "version": "1.0.0"
+    },
+    {
+      "name": "product-launch-strategist",
+      "source": "./plugins/product-launch-strategist",
+      "description": "Product launch strategy advisor for indie developers - competitive analysis, pricing, cost structure, and go-to-market planning",
+      "version": "1.0.0"
     }
   ]
 }
