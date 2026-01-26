@@ -16,6 +16,7 @@ Plugins are specialized tools that extend Claude Code's capabilities. Each plugi
 |--------|-------------|----------|
 | [linear-simple](plugins/linear-simple) | Linear GraphQL API for issue management | `/linear-simple:setup`, `/linear-simple:get`, `/linear-simple:create` |
 | [blog-material-gen](plugins/blog-material-gen) | Auto-generate blog material from Git branches to Notion | `/blog-material-gen:setup`, `/blog-material-gen` |
+| [product-launch-strategist](plugins/product-launch-strategist) | Product launch strategy advisor for indie developers | Natural language triggers |
 
 ## Installation
 
@@ -30,6 +31,7 @@ Install via Claude Code's built-in plugin system:
 # Install specific plugin
 /plugin install linear-simple@opengiver-skills
 /plugin install blog-material-gen@opengiver-skills
+/plugin install product-launch-strategist@opengiver-skills
 ```
 
 ### Option 2: Interactive UI
@@ -89,6 +91,29 @@ Automatically analyze daily Git branches and generate blog material to Notion da
 
 [View full documentation →](plugins/blog-material-gen/README.md)
 
+---
+
+### product-launch-strategist
+
+Strategic advisor for product launches, optimized for indie developers and small teams.
+
+**Features:**
+- Competitive analysis (Porter's 5 Forces, differentiation)
+- Pricing strategy (Freemium, SaaS, benchmarks)
+- Cost analysis (CAC/LTV, break-even)
+- Launch checklist (pre/day/post)
+- Risk assessment (matrix, pre-mortem)
+
+**Triggers:**
+```
+"Should I launch this app?"
+"How should I price this?"
+"경쟁사 대비 강점이 뭐야?"
+"비즈니스 모델 검토해줘"
+```
+
+[View full documentation →](plugins/product-launch-strategist/README.md)
+
 ## Repository Structure
 
 ```
@@ -101,11 +126,15 @@ opengiver-skills/
 │   │   ├── commands/
 │   │   ├── skills/
 │   │   └── README.md
-│   └── blog-material-gen/        # Blog material generator plugin
+│   ├── blog-material-gen/        # Blog material generator plugin
+│   │   ├── .claude-plugin/
+│   │   ├── commands/
+│   │   ├── skills/
+│   │   ├── scripts/
+│   │   └── README.md
+│   └── product-launch-strategist/ # Product launch advisor plugin
 │       ├── .claude-plugin/
-│       ├── commands/
 │       ├── skills/
-│       ├── scripts/
 │       └── README.md
 ├── README.md
 └── README.ko.md

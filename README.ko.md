@@ -16,6 +16,7 @@ Claude Code를 위한 생산성 플러그인 모음. 프로젝트 관리, 콘텐
 |----------|------|--------|
 | [linear-simple](plugins/linear-simple) | 이슈 관리를 위한 Linear GraphQL API | `/linear-simple:setup`, `/linear-simple:get`, `/linear-simple:create` |
 | [blog-material-gen](plugins/blog-material-gen) | Git 브랜치에서 Notion으로 블로그 소재 자동 생성 | `/blog-material-gen:setup`, `/blog-material-gen` |
+| [product-launch-strategist](plugins/product-launch-strategist) | 인디 개발자를 위한 제품 출시 전략 어드바이저 | 자연어 트리거 |
 
 ## 설치
 
@@ -30,6 +31,7 @@ Claude Code의 내장 플러그인 시스템으로 설치:
 # 특정 플러그인 설치
 /plugin install linear-simple@opengiver-skills
 /plugin install blog-material-gen@opengiver-skills
+/plugin install product-launch-strategist@opengiver-skills
 ```
 
 ### 방법 2: UI로 설치
@@ -89,6 +91,29 @@ Daily Git 브랜치를 자동 분석하여 Notion 데이터베이스에 블로�
 
 [전체 문서 보기 →](plugins/blog-material-gen/README.ko.md)
 
+---
+
+### product-launch-strategist
+
+인디 개발자와 소규모 팀을 위한 제품 출시 전략 어드바이저.
+
+**기능:**
+- 경쟁 분석 (Porter's 5 Forces, 차별화 전략)
+- 가격 전략 (Freemium, SaaS, 벤치마크)
+- 비용 분석 (CAC/LTV, 손익분기점)
+- 런칭 체크리스트 (사전/당일/사후)
+- 리스크 평가 (매트릭스, Pre-mortem)
+
+**트리거:**
+```
+"이 앱 런칭해도 될까?"
+"가격 정책 어떻게 세워야 해?"
+"경쟁사 대비 강점이 뭐야?"
+"비즈니스 모델 검토해줘"
+```
+
+[전체 문서 보기 →](plugins/product-launch-strategist/README.ko.md)
+
 ## 저장소 구조
 
 ```
@@ -101,11 +126,15 @@ opengiver-skills/
 │   │   ├── commands/
 │   │   ├── skills/
 │   │   └── README.md
-│   └── blog-material-gen/        # 블로그 소재 생성 플러그인
+│   ├── blog-material-gen/        # 블로그 소재 생성 플러그인
+│   │   ├── .claude-plugin/
+│   │   ├── commands/
+│   │   ├── skills/
+│   │   ├── scripts/
+│   │   └── README.md
+│   └── product-launch-strategist/ # 제품 출시 전략 플러그인
 │       ├── .claude-plugin/
-│       ├── commands/
 │       ├── skills/
-│       ├── scripts/
 │       └── README.md
 ├── README.md
 └── README.ko.md
