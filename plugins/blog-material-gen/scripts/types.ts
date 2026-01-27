@@ -225,3 +225,22 @@ export const DEFAULT_MODELS: Record<ProviderType, string> = {
   anthropic: 'claude-3-5-haiku-20241022',
   google: 'gemini-1.5-flash',
 };
+
+// ========================================
+// User Configuration Types
+// ========================================
+
+/** User configuration stored in config.json */
+export interface UserConfig {
+  api_key: string;
+  database_id: string;
+  database_name?: string;
+  slack_webhook_url?: string;
+
+  // Old format (v1) - for migration detection
+  openai_api_key?: string;
+  openai_model?: 'gpt-4o-mini' | 'gpt-4o';
+
+  // New format (v2)
+  llm?: LLMConfig;
+}

@@ -4,7 +4,7 @@ import * as os from 'os';
 import { analyzeDailyBranch, analyzeCurrentBranchOnly, getCurrentBranch, getRecentDailyBranches, getRepoUrl } from './git-analyzer.js';
 import { extractMeaningfulCodeBlocks } from './code-masker.js';
 import { createNotionClient, createOrAppendBlogMaterialPage, testNotionConnection, extractDateFromBranch } from './notion-client.js';
-import { generateBlogDraft } from './llm-client.js';
+import { createProvider } from './llm-client.js';
 import type {
   PipelineConfig,
   PipelineResult,
@@ -15,19 +15,11 @@ import type {
   TroubleshootingItem,
   NotionCategory,
   BlogDraft,
+  UserConfig,
 } from './types.js';
 
 const CONFIG_PATH = path.join(os.homedir(), '.config', 'blog-material-gen', 'config.json');
 const LOG_DIR = path.join(os.homedir(), '.config', 'blog-material-gen', 'logs');
-
-interface UserConfig {
-  api_key: string;
-  database_id: string;
-  database_name?: string;
-  slack_webhook_url?: string;
-  openai_api_key?: string;
-  openai_model?: 'gpt-4o-mini' | 'gpt-4o';
-}
 
 interface LogEntry {
   timestamp: string;
@@ -218,13 +210,41 @@ async function sendSlackFailureNotification(
   }
 }
 
+function migrateConfig(config: UserConfig): UserConfig {
+  if (config.openai_api_key && !config.llm) {
+    console.log('[Config] Migrated from v1 to v2 format');
+
+    const migratedConfig: UserConfig = {
+      ...config,
+      llm: {
+        provider: 'openai',
+        api_key: config.openai_api_key,
+        model: config.openai_model || 'gpt-4o-mini',
+      },
+    };
+
+    delete migratedConfig.openai_api_key;
+    delete migratedConfig.openai_model;
+
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(migratedConfig, null, 2));
+
+    return migratedConfig;
+  }
+
+  return config;
+}
+
 function loadConfig(): UserConfig | null {
   try {
     if (!fs.existsSync(CONFIG_PATH)) {
       return null;
     }
     const content = fs.readFileSync(CONFIG_PATH, 'utf-8');
-    return JSON.parse(content);
+    let config = JSON.parse(content);
+
+    config = migrateConfig(config);
+
+    return config;
   } catch {
     return null;
   }
@@ -344,15 +364,12 @@ async function processBranchAnalysis(
         url: '',
       }));
 
-  // Try to generate LLM draft if API key is configured
   let llmDraft: BlogDraft | undefined;
-  if (userConfig?.openai_api_key && userConfig?.openai_model) {
-    console.log('[LLM] Enabled - Generating blog draft...');
+  if (userConfig?.llm) {
+    console.log(`[LLM] Using provider: ${userConfig.llm.provider} (${userConfig.llm.model})`);
     try {
-      const draft = await generateBlogDraft(branch, {
-        openai_api_key: userConfig.openai_api_key,
-        openai_model: userConfig.openai_model,
-      });
+      const provider = createProvider(userConfig.llm);
+      const draft = await provider.generateDraft(branch);
       if (draft) {
         llmDraft = draft;
         console.log('[LLM] ✅ Blog draft generated successfully');
@@ -363,7 +380,7 @@ async function processBranchAnalysis(
       console.error('[LLM] ❌ Error generating draft:', error instanceof Error ? error.message : String(error));
     }
   } else {
-    console.log('[LLM] Disabled (no API key configured)');
+    console.log('[LLM] Disabled (no configuration)');
   }
 
   return {
