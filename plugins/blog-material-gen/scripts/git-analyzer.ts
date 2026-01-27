@@ -326,7 +326,16 @@ export async function findBaseBranch(workingDirectory: string, currentBranch: st
   } catch {
   }
 
+  // Try local branches first, then remote refs (for worktree support)
+  const candidatesWithRemote: string[] = [];
   for (const candidate of candidates) {
+    candidatesWithRemote.push(candidate);
+    candidatesWithRemote.push(`origin/${candidate}`);
+  }
+
+  const attemptedBranches: string[] = [];
+  for (const candidate of candidatesWithRemote) {
+    attemptedBranches.push(candidate);
     try {
       const mergeBase = await git.raw(['merge-base', currentBranch, candidate]);
       if (mergeBase.trim()) {
@@ -337,13 +346,19 @@ export async function findBaseBranch(workingDirectory: string, currentBranch: st
     }
   }
 
-  return 'main';
+  // Throw clear error with list of attempted branches
+  throw new Error(`Base branch not found. Tried: ${attemptedBranches.join(', ')}`);
 }
 
 export async function analyzeCurrentBranchOnly(
   workingDirectory: string,
 ): Promise<BranchAnalysis> {
   const git: SimpleGit = simpleGit(workingDirectory);
+  
+  // Fetch latest remote refs for worktree support
+  console.log(`🔄 Fetching latest remote refs...`);
+  await git.fetch(['origin']);
+  
   const currentBranch = await getCurrentBranch(workingDirectory);
   
   console.log(`📂 Analyzing current branch: ${currentBranch}`);
@@ -407,8 +422,9 @@ async function getCommitsForCurrentBranch(
 
     return commits;
   } catch (error) {
-    console.error(`Error getting commits for current branch:`, error);
-    return [];
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`Error getting commits between ${currentBranch} and ${baseBranch}: ${errorMsg}`);
+    throw error;
   }
 }
 
