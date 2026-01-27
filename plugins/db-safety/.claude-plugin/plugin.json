@@ -1,0 +1,5 @@
+{
+  "name": "db-safety",
+  "description": "Backend/Server/DB Safety Protocol - Dangerous operation approval, SQL query guide, safe migration patterns",
+  "version": "1.0.0"
+}
