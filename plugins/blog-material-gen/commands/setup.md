@@ -126,53 +126,147 @@ curl -s -X POST 'WEBHOOK_URL' \
 ### If No:
 - Skip Slack setup, proceed to Step 6 without slack_webhook_url
 
-## Step 6: Save Configuration
+## Step 6: Ask for OpenAI API Configuration (Optional)
+
+Use **AskUserQuestion**:
+- Question: "OpenAI API 키를 설정하시겠습니까? (선택사항 - 블로그 초안 자동 생성 기능 활성화)"
+- Options:
+  - **Yes** - "OpenAI API 설정"
+  - **No** - "나중에 설정 (스킵)"
+
+### If Yes:
+
+#### Step 6.1: Get OpenAI API Key
+
+Use **AskUserQuestion**:
+- Question: "OpenAI API 키를 입력해주세요.\n\n📌 API 키 생성 방법:\n1. https://platform.openai.com/api-keys 접속\n2. 'Create new secret key' 클릭\n3. 키 복사 (sk-... 형식)\n\n💡 팁: 키는 한 번만 표시되므로 안전한 곳에 저장하세요."
+- Text input required
+
+#### Step 6.2: Validate OpenAI API Key
+
+Test the API key:
+```bash
+curl -s -X GET 'https://api.openai.com/v1/models' \
+  -H 'Authorization: Bearer API_KEY'
+```
+
+- If response contains `"object": "list"`: API key is valid, proceed to Step 6.3
+- If response contains `"error"`: Show error "❌ API 키가 유효하지 않습니다. 키를 다시 확인해주세요."
+  - Ask user to re-enter API key
+
+#### Step 6.3: Ask for Model Selection
+
+Use **AskUserQuestion**:
+- Question: "사용할 모델을 선택해주세요.\n\n💡 추천: gpt-4o-mini (비용 효율적)\n고급: gpt-4o (더 정확한 분석)"
+- Options:
+  - **gpt-4o-mini** - "gpt-4o-mini (기본, 비용 효율적)"
+  - **gpt-4o** - "gpt-4o (고급, 더 정확함)"
+
+### If No:
+- Skip OpenAI setup, proceed to Step 7 without openai_api_key and openai_model
+
+## Step 7: Save Configuration
 
 Use Write tool to create `~/.config/blog-material-gen/config.json`:
 
-### With Slack:
+### All Options (Slack + OpenAI):
 ```json
 {
-  "api_key": "USER_API_KEY",
-  "database_id": "DATABASE_ID",
-  "database_name": "DATABASE_NAME",
-  "slack_webhook_url": "WEBHOOK_URL"
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "slack_webhook_url": "https://hooks.slack.com/services/...",
+  "openai_api_key": "sk-...",
+  "openai_model": "gpt-4o-mini"
 }
 ```
 
-### Without Slack:
+### With Slack, Without OpenAI:
 ```json
 {
-  "api_key": "USER_API_KEY",
-  "database_id": "DATABASE_ID",
-  "database_name": "DATABASE_NAME"
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "slack_webhook_url": "https://hooks.slack.com/services/..."
 }
 ```
 
-## Step 7: Confirmation Message
+### With OpenAI, Without Slack:
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "openai_api_key": "sk-...",
+  "openai_model": "gpt-4o-mini"
+}
+```
+
+### Minimal (Notion Only):
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas"
+}
+```
+
+## Step 8: Confirmation Message
 
 After setup complete, show:
 
-### With Slack:
+### With Slack and OpenAI:
 ```
 ✅ Blog Material Generator 설정 완료
 
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 설정됨
+✓ OpenAI API: 설정됨 (gpt-4o-mini)
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### With Slack, Without OpenAI:
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 설정됨
+✓ OpenAI API: 미설정 (나중에 config.json에 openai_api_key 추가 가능)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
 이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
 ```
 
-### Without Slack:
+### With OpenAI, Without Slack:
 ```
 ✅ Blog Material Generator 설정 완료
 
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
+✓ OpenAI API: 설정됨 (gpt-4o-mini)
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### Notion Only (No Slack, No OpenAI):
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
+✓ OpenAI API: 미설정 (나중에 config.json에 openai_api_key 추가 가능)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
