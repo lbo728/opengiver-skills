@@ -200,13 +200,29 @@ function buildBranchMaterialBlocks(branch: BranchMaterial, workspaceName?: strin
     }
   }
 
-  if (branch.blogIdeaTitle) {
-    blocks.push(callout(`**초안 포스트 아이디어**: ${branch.blogIdeaTitle}`, '📝'));
-  }
+   if (branch.blogIdeaTitle) {
+     blocks.push(callout(`**초안 포스트 아이디어**: ${branch.blogIdeaTitle}`, '📝'));
+   }
 
-  blocks.push(divider());
+   if (branch.llmDraft) {
+     blocks.push(heading3('📝 블로그 초안'));
+     blocks.push(paragraph(`**제목**: ${branch.llmDraft.title}`));
+     
+     if (branch.llmDraft.keyPoints.length > 0) {
+       blocks.push(paragraph('**핵심 포인트**:'));
+       for (const point of branch.llmDraft.keyPoints) {
+         blocks.push(bulletItem(point));
+       }
+     }
+     
+     if (branch.llmDraft.codeExplanation) {
+       blocks.push(paragraph(`**코드 설명**: ${branch.llmDraft.codeExplanation}`));
+     }
+   }
 
-  return blocks;
+   blocks.push(divider());
+
+   return blocks;
 }
 
 export function buildNotionBlocksForNew(data: DailyBranchData, workspaceName?: string): BlockObjectRequest[] {

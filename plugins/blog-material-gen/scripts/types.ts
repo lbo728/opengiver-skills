@@ -65,6 +65,13 @@ export interface BranchMaterial {
   blogIdeaTitle: string;
   prUrl?: string;
   commitUrls: Array<{ hash: string; url: string }>;
+  llmDraft?: BlogDraft;
+}
+
+export interface BlogDraft {
+  title: string;
+  keyPoints: string[];
+  codeExplanation: string;
 }
 
 export interface TroubleshootingItem {

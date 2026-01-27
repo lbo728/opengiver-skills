@@ -4,6 +4,7 @@ import * as os from 'os';
 import { analyzeDailyBranch, analyzeCurrentBranchOnly, getCurrentBranch, getRecentDailyBranches, getRepoUrl } from './git-analyzer.js';
 import { extractMeaningfulCodeBlocks } from './code-masker.js';
 import { createNotionClient, createOrAppendBlogMaterialPage, testNotionConnection, extractDateFromBranch } from './notion-client.js';
+import { generateBlogDraft } from './llm-client.js';
 import type {
   PipelineConfig,
   PipelineResult,
@@ -13,6 +14,7 @@ import type {
   BlogIdea,
   TroubleshootingItem,
   NotionCategory,
+  BlogDraft,
 } from './types.js';
 
 const CONFIG_PATH = path.join(os.homedir(), '.config', 'blog-material-gen', 'config.json');
@@ -23,6 +25,8 @@ interface UserConfig {
   database_id: string;
   database_name?: string;
   slack_webhook_url?: string;
+  openai_api_key?: string;
+  openai_model?: 'gpt-4o-mini' | 'gpt-4o';
 }
 
 interface LogEntry {
@@ -315,7 +319,11 @@ function generateBlogIdea(branch: BranchAnalysis): BlogIdea {
   };
 }
 
-function processBranchAnalysis(branch: BranchAnalysis, repoUrl?: string): BranchMaterial {
+async function processBranchAnalysis(
+  branch: BranchAnalysis,
+  repoUrl?: string,
+  userConfig?: UserConfig
+): Promise<BranchMaterial> {
   const codeBlocks = extractMeaningfulCodeBlocks(branch.filesChanged, 3);
   const troubleshooting = extractTroubleshooting(branch);
   const learnings = extractLearnings(branch);
@@ -336,6 +344,28 @@ function processBranchAnalysis(branch: BranchAnalysis, repoUrl?: string): Branch
         url: '',
       }));
 
+  // Try to generate LLM draft if API key is configured
+  let llmDraft: BlogDraft | undefined;
+  if (userConfig?.openai_api_key && userConfig?.openai_model) {
+    console.log('[LLM] Enabled - Generating blog draft...');
+    try {
+      const draft = await generateBlogDraft(branch, {
+        openai_api_key: userConfig.openai_api_key,
+        openai_model: userConfig.openai_model,
+      });
+      if (draft) {
+        llmDraft = draft;
+        console.log('[LLM] ✅ Blog draft generated successfully');
+      } else {
+        console.log('[LLM] ⚠️  Failed to generate draft, using fallback');
+      }
+    } catch (error) {
+      console.error('[LLM] ❌ Error generating draft:', error instanceof Error ? error.message : String(error));
+    }
+  } else {
+    console.log('[LLM] Disabled (no API key configured)');
+  }
+
   return {
     name: branch.branchName,
     requirements: requirements.substring(0, 500),
@@ -346,6 +376,7 @@ function processBranchAnalysis(branch: BranchAnalysis, repoUrl?: string): Branch
     blogIdeaTitle: blogIdea.title,
     prUrl: branch.prInfo?.url,
     commitUrls,
+    llmDraft,
   };
 }
 
@@ -401,7 +432,7 @@ function extractWorkspaceName(workingDirectory: string): string {
   return path.basename(workingDirectory);
 }
 
-export async function generateBlogMaterialFromCurrentBranch(config: Omit<PipelineConfig, 'dailyBranch'>): Promise<PipelineResult> {
+export async function generateBlogMaterialFromCurrentBranch(config: Omit<PipelineConfig, 'dailyBranch'>, userConfig?: UserConfig): Promise<PipelineResult> {
   const errors: string[] = [];
   const workspaceName = extractWorkspaceName(config.workingDirectory);
   const today = new Date().toISOString().split('T')[0];
@@ -441,7 +472,7 @@ export async function generateBlogMaterialFromCurrentBranch(config: Omit<Pipelin
 
      console.log('🔧 Processing branch data...');
      const repoUrl = await getRepoUrl(config.workingDirectory);
-     const branchMaterial = processBranchAnalysis(branchAnalysis, repoUrl);
+     const branchMaterial = await processBranchAnalysis(branchAnalysis, repoUrl, userConfig);
      const blogIdea = generateBlogIdea(branchAnalysis);
      const allTechs = [...new Set(branchMaterial.tech)];
 
@@ -489,7 +520,7 @@ export async function generateBlogMaterialFromCurrentBranch(config: Omit<Pipelin
   }
 }
 
-export async function generateBlogMaterial(config: PipelineConfig): Promise<PipelineResult> {
+export async function generateBlogMaterial(config: PipelineConfig, userConfig?: UserConfig): Promise<PipelineResult> {
   const errors: string[] = [];
   const workspaceName = extractWorkspaceName(config.workingDirectory);
 
@@ -528,7 +559,9 @@ export async function generateBlogMaterial(config: PipelineConfig): Promise<Pipe
 
      console.log('🔧 Processing branch data...');
      const repoUrl = await getRepoUrl(config.workingDirectory);
-     const branchMaterials = branchAnalyses.map((b) => processBranchAnalysis(b, repoUrl));
+     const branchMaterials = await Promise.all(
+       branchAnalyses.map((b) => processBranchAnalysis(b, repoUrl, userConfig))
+     );
      const blogIdeas = branchAnalyses.map(generateBlogIdea);
      const allTechs = [...new Set(branchMaterials.flatMap((b) => b.tech))];
 
@@ -596,14 +629,14 @@ async function main() {
   let result: PipelineResult;
   let branchForLog: string;
 
-  if (isCurrentBranchMode) {
-    branchForLog = await getCurrentBranch(workingDirectory);
-    result = await generateBlogMaterialFromCurrentBranch({
-      workingDirectory,
-      notionApiKey: userConfig.api_key,
-      notionDatabaseId: userConfig.database_id,
-    });
-  } else {
+   if (isCurrentBranchMode) {
+     branchForLog = await getCurrentBranch(workingDirectory);
+     result = await generateBlogMaterialFromCurrentBranch({
+       workingDirectory,
+       notionApiKey: userConfig.api_key,
+       notionDatabaseId: userConfig.database_id,
+     }, userConfig);
+   } else {
     if (!dailyBranch) {
       console.log('ℹ️  No daily branch specified. Looking for recent daily branches...');
       const recentBranches = await getRecentDailyBranches(workingDirectory);
@@ -618,15 +651,15 @@ async function main() {
       }
     }
 
-    const config: PipelineConfig = {
-      dailyBranch,
-      workingDirectory,
-      notionApiKey: userConfig.api_key,
-      notionDatabaseId: userConfig.database_id,
-    };
+     const config: PipelineConfig = {
+       dailyBranch,
+       workingDirectory,
+       notionApiKey: userConfig.api_key,
+       notionDatabaseId: userConfig.database_id,
+     };
 
-    result = await generateBlogMaterial(config);
-    branchForLog = dailyBranch;
+     result = await generateBlogMaterial(config, userConfig);
+     branchForLog = dailyBranch;
   }
   const workspaceName = extractWorkspaceName(workingDirectory);
   const duration = Date.now() - startTime;
