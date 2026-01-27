@@ -9,7 +9,8 @@
   "dependencies": {
     "@notionhq/client": "^2.2.15",
     "simple-git": "^3.25.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "openai": "^4.52.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
