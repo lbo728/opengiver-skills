@@ -126,20 +126,22 @@ curl -s -X POST 'WEBHOOK_URL' \
 ### If No:
 - Skip Slack setup, proceed to Step 6 without slack_webhook_url
 
-## Step 6: Ask for OpenAI API Configuration (Optional)
+## Step 6: Ask for LLM Provider Configuration (Optional)
 
 Use **AskUserQuestion**:
-- Question: "OpenAI API 키를 설정하시겠습니까? (선택사항 - 블로그 초안 자동 생성 기능 활성화)"
+- Question: "LLM Provider를 설정하시겠습니까? (선택사항 - 블로그 초안 자동 생성 기능 활성화)\n\n💡 추천: Google Gemini Flash (무료 티어)"
 - Options:
-  - **Yes** - "OpenAI API 설정"
-  - **No** - "나중에 설정 (스킵)"
+  - **OpenAI** - "OpenAI (gpt-4o-mini, gpt-4o)"
+  - **Anthropic** - "Anthropic (Claude 3.5 Haiku, Sonnet)"
+  - **Google** - "Google Gemini (Flash, Pro) - 추천 ⭐"
+  - **Skip** - "나중에 설정 (스킵)"
 
-### If Yes:
+### If OpenAI Selected:
 
 #### Step 6.1: Get OpenAI API Key
 
 Use **AskUserQuestion**:
-- Question: "OpenAI API 키를 입력해주세요.\n\n📌 API 키 생성 방법:\n1. https://platform.openai.com/api-keys 접속\n2. 'Create new secret key' 클릭\n3. 키 복사 (sk-... 형식)\n\n💡 팁: 키는 한 번만 표시되므로 안전한 곳에 저장하세요."
+- Question: "OpenAI API 키를 입력해주세요.\n\n📌 API 키 생성 방법:\n1. https://platform.openai.com/api-keys 접속\n2. 'Create new secret key' 클릭\n3. 키 복사 (sk-... 형식)"
 - Text input required
 
 #### Step 6.2: Validate OpenAI API Key
@@ -157,31 +159,123 @@ curl -s -X GET 'https://api.openai.com/v1/models' \
 #### Step 6.3: Ask for Model Selection
 
 Use **AskUserQuestion**:
-- Question: "사용할 모델을 선택해주세요.\n\n💡 추천: gpt-4o-mini (비용 효율적)\n고급: gpt-4o (더 정확한 분석)"
+- Question: "사용할 모델을 선택해주세요."
 - Options:
   - **gpt-4o-mini** - "gpt-4o-mini (기본, 비용 효율적)"
   - **gpt-4o** - "gpt-4o (고급, 더 정확함)"
 
-### If No:
-- Skip OpenAI setup, proceed to Step 7 without openai_api_key and openai_model
+### If Anthropic Selected:
+
+#### Step 6.1: Get Anthropic API Key
+
+Use **AskUserQuestion**:
+- Question: "Anthropic API 키를 입력해주세요.\n\n📌 API 키 생성 방법:\n1. https://console.anthropic.com/settings/keys 접속\n2. 'Create Key' 클릭\n3. 키 복사 (sk-ant-... 형식)"
+- Text input required
+
+#### Step 6.2: Validate Anthropic API Key
+
+Test the API key:
+```bash
+curl -s -X POST 'https://api.anthropic.com/v1/messages' \
+  -H 'x-api-key: API_KEY' \
+  -H 'anthropic-version: 2023-06-01' \
+  -H 'content-type: application/json' \
+  -d '{"model":"claude-3-5-haiku-20241022","max_tokens":1,"messages":[{"role":"user","content":"test"}]}'
+```
+
+- If response contains `"id"`: API key is valid, proceed to Step 6.3
+- If response contains `"error"`: Show error "❌ API 키가 유효하지 않습니다. 키를 다시 확인해주세요."
+  - Ask user to re-enter API key
+
+#### Step 6.3: Ask for Model Selection
+
+Use **AskUserQuestion**:
+- Question: "사용할 모델을 선택해주세요."
+- Options:
+  - **claude-3-5-haiku-20241022** - "Claude 3.5 Haiku (기본, 빠름)"
+  - **claude-3-5-sonnet-20241022** - "Claude 3.5 Sonnet (고급, 정확함)"
+  - **claude-3-opus-20240229** - "Claude 3 Opus (최고급)"
+
+### If Google Selected:
+
+#### Step 6.1: Get Google API Key
+
+Use **AskUserQuestion**:
+- Question: "Google AI Studio API 키를 입력해주세요.\n\n📌 API 키 생성 방법:\n1. https://aistudio.google.com/app/apikey 접속\n2. 'Create API Key' 클릭\n3. 키 복사 (AIza... 형식)\n\n💡 무료 티어: 분당 15 요청, 일일 1500 요청"
+- Text input required
+
+#### Step 6.2: Validate Google API Key
+
+Test the API key:
+```bash
+curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=API_KEY"
+```
+
+- If response contains `"models"`: API key is valid, proceed to Step 6.3
+- If response contains `"error"`: Show error "❌ API 키가 유효하지 않습니다. 키를 다시 확인해주세요."
+  - Ask user to re-enter API key
+
+#### Step 6.3: Ask for Model Selection
+
+Use **AskUserQuestion**:
+- Question: "사용할 모델을 선택해주세요."
+- Options:
+  - **gemini-1.5-flash** - "Gemini 1.5 Flash (기본, 무료 티어) - 추천 ⭐"
+  - **gemini-1.5-pro** - "Gemini 1.5 Pro (고급, 더 정확함)"
+
+### If Skip:
+- Skip LLM setup, proceed to Step 7 without llm configuration
 
 ## Step 7: Save Configuration
 
 Use Write tool to create `~/.config/blog-material-gen/config.json`:
 
-### All Options (Slack + OpenAI):
+### With Slack + OpenAI:
 ```json
 {
   "api_key": "secret_xxx...",
   "database_id": "abc123def456...",
   "database_name": "Blog Ideas",
   "slack_webhook_url": "https://hooks.slack.com/services/...",
-  "openai_api_key": "sk-...",
-  "openai_model": "gpt-4o-mini"
+  "llm": {
+    "provider": "openai",
+    "api_key": "sk-...",
+    "model": "gpt-4o-mini"
+  }
 }
 ```
 
-### With Slack, Without OpenAI:
+### With Slack + Anthropic:
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "slack_webhook_url": "https://hooks.slack.com/services/...",
+  "llm": {
+    "provider": "anthropic",
+    "api_key": "sk-ant-...",
+    "model": "claude-3-5-haiku-20241022"
+  }
+}
+```
+
+### With Slack + Google:
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "slack_webhook_url": "https://hooks.slack.com/services/...",
+  "llm": {
+    "provider": "google",
+    "api_key": "AIza...",
+    "model": "gemini-1.5-flash"
+  }
+}
+```
+
+### With Slack, Without LLM:
 ```json
 {
   "api_key": "secret_xxx...",
@@ -197,8 +291,39 @@ Use Write tool to create `~/.config/blog-material-gen/config.json`:
   "api_key": "secret_xxx...",
   "database_id": "abc123def456...",
   "database_name": "Blog Ideas",
-  "openai_api_key": "sk-...",
-  "openai_model": "gpt-4o-mini"
+  "llm": {
+    "provider": "openai",
+    "api_key": "sk-...",
+    "model": "gpt-4o-mini"
+  }
+}
+```
+
+### With Anthropic, Without Slack:
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "llm": {
+    "provider": "anthropic",
+    "api_key": "sk-ant-...",
+    "model": "claude-3-5-haiku-20241022"
+  }
+}
+```
+
+### With Google, Without Slack:
+```json
+{
+  "api_key": "secret_xxx...",
+  "database_id": "abc123def456...",
+  "database_name": "Blog Ideas",
+  "llm": {
+    "provider": "google",
+    "api_key": "AIza...",
+    "model": "gemini-1.5-flash"
+  }
 }
 ```
 
@@ -222,7 +347,7 @@ After setup complete, show:
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 설정됨
-✓ OpenAI API: 설정됨 (gpt-4o-mini)
+✓ LLM Provider: OpenAI (gpt-4o-mini)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
@@ -230,14 +355,44 @@ After setup complete, show:
 블로그 초안이 자동으로 생성됩니다.
 ```
 
-### With Slack, Without OpenAI:
+### With Slack and Anthropic:
 ```
 ✅ Blog Material Generator 설정 완료
 
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 설정됨
-✓ OpenAI API: 미설정 (나중에 config.json에 openai_api_key 추가 가능)
+✓ LLM Provider: Anthropic (claude-3-5-haiku-20241022)
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### With Slack and Google:
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 설정됨
+✓ LLM Provider: Google Gemini (gemini-1.5-flash) - 무료 티어
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### With Slack, Without LLM:
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 설정됨
+✓ LLM Provider: 미설정 (나중에 config.json에 llm 추가 가능)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
@@ -251,7 +406,7 @@ After setup complete, show:
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
-✓ OpenAI API: 설정됨 (gpt-4o-mini)
+✓ LLM Provider: OpenAI (gpt-4o-mini)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
@@ -259,14 +414,44 @@ After setup complete, show:
 블로그 초안이 자동으로 생성됩니다.
 ```
 
-### Notion Only (No Slack, No OpenAI):
+### With Anthropic, Without Slack:
 ```
 ✅ Blog Material Generator 설정 완료
 
 ✓ Notion API 키: 설정됨
 ✓ 데이터베이스: "DATABASE_NAME" 연결됨
 ✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
-✓ OpenAI API: 미설정 (나중에 config.json에 openai_api_key 추가 가능)
+✓ LLM Provider: Anthropic (claude-3-5-haiku-20241022)
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### With Google, Without Slack:
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
+✓ LLM Provider: Google Gemini (gemini-1.5-flash) - 무료 티어
+
+설정 파일 위치: ~/.config/blog-material-gen/config.json
+
+이제 "/blog-material-gen" 또는 "블로그 소재 생성해줘"로 사용할 수 있습니다.
+블로그 초안이 자동으로 생성됩니다.
+```
+
+### Notion Only (No Slack, No LLM):
+```
+✅ Blog Material Generator 설정 완료
+
+✓ Notion API 키: 설정됨
+✓ 데이터베이스: "DATABASE_NAME" 연결됨
+✓ Slack 알림: 미설정 (나중에 config.json에 slack_webhook_url 추가 가능)
+✓ LLM Provider: 미설정 (나중에 config.json에 llm 추가 가능)
 
 설정 파일 위치: ~/.config/blog-material-gen/config.json
 
