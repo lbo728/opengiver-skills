@@ -17,6 +17,8 @@ Plugins are specialized tools that extend Claude Code's capabilities. Each plugi
 | [linear-simple](plugins/linear-simple) | Linear GraphQL API for issue management | `/linear-simple:setup`, `/linear-simple:get`, `/linear-simple:create` |
 | [blog-material-gen](plugins/blog-material-gen) | Auto-generate blog material from Git branches to Notion | `/blog-material-gen:setup`, `/blog-material-gen` |
 | [product-launch-strategist](plugins/product-launch-strategist) | Product launch strategy advisor for indie developers | `/product-launch-strategist:analyze`, `:pricing`, `:risk` |
+| [git-worktree](plugins/git-worktree) | Git worktree protocol for parallel development with isolated workspaces | Skill-only (no commands) |
+| [db-safety](plugins/db-safety) | Database safety protocol to prevent accidental data loss | Skill-only (no commands) |
 
 ## Installation
 
@@ -114,6 +116,58 @@ Strategic advisor for product launches, optimized for indie developers and small
 
 [View full documentation →](plugins/product-launch-strategist/README.md)
 
+---
+
+### git-worktree
+
+Git Worktree Protocol for safe parallel development with isolated workspaces.
+
+**Features:**
+- Isolated workspaces for each feature/fix branch
+- Automatic environment file management (.env, secrets)
+- Dev server management with `wt` CLI
+- Flutter worktree switcher (`wtf`) for mobile development
+- Disk optimization with shared build caches
+- Automatic cleanup after PR merge
+
+**Triggers:**
+```
+"worktree"
+"wt"
+"Start implementing"
+"구현 시작"
+"parallel development"
+"feature branch"
+```
+
+[View full documentation →](plugins/git-worktree/README.md)
+
+---
+
+### db-safety
+
+Database Safety Protocol to prevent accidental data loss and enforce safe migrations.
+
+**Features:**
+- Dangerous operation blocking (DROP, ALTER, DELETE, TRUNCATE)
+- SQL query safety guide with safe vs. unsafe patterns
+- Safe migration patterns (3-step deletion, Expand-Contract)
+- Risk level classification (LOW, MEDIUM, HIGH, CRITICAL)
+- Environment separation (Dev DB vs. Prod DB)
+- Rollback procedures for migration failures
+
+**Triggers:**
+```
+"DROP TABLE"
+"ALTER COLUMN"
+"DELETE FROM"
+"마이그레이션"
+"SQL"
+"dangerous operation"
+```
+
+[View full documentation →](plugins/db-safety/README.md)
+
 ## Repository Structure
 
 ```
@@ -132,9 +186,17 @@ opengiver-skills/
 │   │   ├── skills/
 │   │   ├── scripts/
 │   │   └── README.md
-│   └── product-launch-strategist/ # Product launch advisor plugin
+│   ├── product-launch-strategist/ # Product launch advisor plugin
+│   │   ├── .claude-plugin/
+│   │   ├── commands/
+│   │   ├── skills/
+│   │   └── README.md
+│   ├── git-worktree/             # Git worktree protocol plugin
+│   │   ├── .claude-plugin/
+│   │   ├── skills/
+│   │   └── README.md
+│   └── db-safety/                # Database safety protocol plugin
 │       ├── .claude-plugin/
-│       ├── commands/
 │       ├── skills/
 │       └── README.md
 ├── README.md

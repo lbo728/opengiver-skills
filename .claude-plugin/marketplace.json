@@ -9,16 +9,28 @@
   },
   "plugins": [
     {
-      "name": "linear-simple",
-      "source": "./plugins/linear-simple",
-      "description": "Linear GraphQL API skill for issue CRUD, comments, and status changes",
-      "version": "1.1.6"
-    },
-    {
       "name": "blog-material-gen",
       "source": "./plugins/blog-material-gen",
       "description": "Auto-generate blog material from daily branch to Notion with Slack notifications",
       "version": "1.0.0"
+    },
+    {
+      "name": "db-safety",
+      "source": "./plugins/db-safety",
+      "description": "Backend/Server/DB Safety Protocol - Dangerous operation approval and safe migration",
+      "version": "1.0.0"
+    },
+    {
+      "name": "git-worktree",
+      "source": "./plugins/git-worktree",
+      "description": "Git Worktree Protocol - Parallel development with isolated workspaces",
+      "version": "1.0.0"
+    },
+    {
+      "name": "linear-simple",
+      "source": "./plugins/linear-simple",
+      "description": "Linear GraphQL API skill for issue CRUD, comments, and status changes",
+      "version": "1.1.6"
     },
     {
       "name": "product-launch-strategist",
