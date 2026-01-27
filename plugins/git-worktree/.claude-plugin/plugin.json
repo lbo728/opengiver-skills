@@ -1,0 +1,5 @@
+{
+  "name": "git-worktree",
+  "description": "Git Worktree Protocol - Parallel development with isolated workspaces, wt CLI, and environment management",
+  "version": "1.0.0"
+}
