@@ -1,5 +1,16 @@
 {
   "name": "blog-material-gen",
   "description": "Auto-generate blog material to Notion with AI drafts (OpenAI/Anthropic/Google Gemini). Supports PR/commit links and Slack notifications.",
-  "version": "2.0.0"
+  "version": "2.0.0",
+  "commands": {
+    "setup": {
+      "description": "Initial setup - configure Notion API, database, Slack webhook, and LLM provider"
+    },
+    "change-llm": {
+      "description": "Change LLM provider, model, or API key"
+    },
+    "config": {
+      "description": "Open config.json in editor for direct editing"
+    }
+  }
 }

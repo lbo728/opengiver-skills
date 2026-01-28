@@ -1,2 +1,16 @@
 firebase-debug.log
 AGENTS.local.md
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sisyphus (internal planning/tracking)
+.sisyphus/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
