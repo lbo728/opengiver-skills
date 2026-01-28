@@ -1,5 +1,5 @@
 {
   "name": "blog-material-gen",
-  "description": "Daily branch PR merge or current branch → auto-generate blog material to Notion. Supports Slack notifications.",
-  "version": "1.1.0"
+  "description": "Auto-generate blog material to Notion with AI drafts (OpenAI/Anthropic/Google Gemini). Supports PR/commit links and Slack notifications.",
+  "version": "2.0.0"
 }
